@@ -31,7 +31,7 @@ Intel Core i5-2415M @2.30GHz
 Mac OS X 10.8.4
 MacPorts gcc 4.7.3
 
-Number of threads:
+Number of threads: 4
 
 Operations   % of         Time       Time     Time     Fcmm speedup   Fcmm speedup
 (mln)        insertions   (serial)   (TBB)    (Fcmm)   over serial    over TBB
