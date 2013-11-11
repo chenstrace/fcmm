@@ -1,7 +1,7 @@
-Fast Concurrent Memoization Map (Fcmm)
+Fast Concurrent Memoization Map (fcmm)
 http://projects.giacomodrago.com/fcmm
 
-This file contains the results of some benchmarks comparing Fcmm and
+This file contains the results of some benchmarks comparing fcmm and
 tbb::concurrent_hash_map. You can execute the same benchmark on your machine by running the
 following commands in the "test" directory:
 
@@ -10,9 +10,9 @@ $ export FCMM_NUM_THREADS=4                             # Change as needed
 $ ./benchmark_tbb_batch.sh | tee benchmark_results.txt  # Will write a file named benchmark_results.txt
                                                         # containing a table similar to the ones below
 
-Actually, Fcmm and tbb::concurrent_hash_map provide different features (e.g. Fcmm does not support
+Actually, fcmm and tbb::concurrent_hash_map provide different features (e.g. fcmm does not support
 erase and update) so the benchmark is not meant to be an 'absolute' comparison between the two.
-Fcmm may provide a better performance when:
+fcmm may provide a better performance when:
  - There is no need to delete or update the entries
  - The map shall store a large number of entries and you can provide a reasonable estimate of their number
  - Values are relatively fast to compute
@@ -33,8 +33,8 @@ MacPorts gcc 4.7.3
 
 Number of threads: 4
 
-Operations   % of         Time       Time     Time     Fcmm speedup   Fcmm speedup
-(mln)        insertions   (serial)   (TBB)    (Fcmm)   over serial    over TBB
+Operations   % of         Time       Time     Time     fcmm speedup   fcmm speedup
+(mln)        insertions   (serial)   (TBB)    (fcmm)   over serial    over TBB
 -----------------------------------------------------------------------------------
 8            10           1754       650      522      3.36           1.25
 8            20           2071       842      634      3.27           1.33
@@ -67,8 +67,8 @@ gcc 4.7.2
 
 Number of threads: 8
 
-Operations   % of         Time       Time     Time     Fcmm speedup   Fcmm speedup
-(mln)        insertions   (serial)   (TBB)    (Fcmm)   over serial    over TBB
+Operations   % of         Time       Time     Time     fcmm speedup   fcmm speedup
+(mln)        insertions   (serial)   (TBB)    (fcmm)   over serial    over TBB
 -----------------------------------------------------------------------------------
 8            10           1620       493      369      4.39           1.34
 8            20           2154       686      516      4.17           1.33

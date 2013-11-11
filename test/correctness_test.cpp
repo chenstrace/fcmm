@@ -11,7 +11,7 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *      This product includes Fcmm, a software developed by Giacomo Drago.
+ *      This product includes fcmm, a software developed by Giacomo Drago.
  *      Website: http://projects.giacomodrago.com/fcmm
  * 4. Neither the name of Giacomo Drago nor the
  *    names of its contributors may be used to endorse or promote products
@@ -55,7 +55,7 @@ void failTest(const std::string& message) {
     exit(EXIT_FAILURE);
 }
 
-typedef Fcmm<Key, Value, KeyHash1, KeyHash2> FcmmType;
+typedef fcmm::Fcmm<Key, Value, KeyHash1, KeyHash2> FcmmType;
 
 void threadFunction(int threadNo, FcmmType& map, std::array<int, NUM_THREADS>& performedInsertions) {
     std::array<std::uint16_t, KEY_FIELD_MAX_VALUE+1> sequence;
@@ -262,9 +262,9 @@ int main(void) {
     bool verbose = verboseEnv != NULL && atoi(verboseEnv) == 1;
 
     std::cout
-            << "Correctness test for Fast Concurrent Memoization Map (Fcmm)" << std::endl << std::endl
+            << "Correctness test for Fast Concurrent Memoization Map (fcmm)" << std::endl << std::endl
             << "The test will be executed " << TEST_RUNS << " times and may require quite a long time. " << std::endl
-            << "Please be patient, this is not a benchmark." << std::endl << std::endl; 
+            << "Please be patient, this is not a benchmark." << std::endl << std::endl;
 
     for (int i = 1; i <= TEST_RUNS; i++) {
         std::cout << "-------------------------------------------" << std::endl;
@@ -279,5 +279,5 @@ int main(void) {
     std::cout << "TEST SUCCEEDED" << std::endl;
 
     return EXIT_SUCCESS;
-    
+
 }

@@ -14,8 +14,8 @@ INSERT_PERCENTAGE_LIST="10 20 30 40 50" # % of insert operations
 export FCMM_PRINT_AS_ROW=1
 
 # Print table header
-echo "Operations   % of         Time       Time     Time     Fcmm speedup   Fcmm speedup "
-echo "(mln)        insertions   (serial)   (TBB)    (Fcmm)   over serial    over TBB     "
+echo "Operations   % of         Time       Time     Time     fcmm speedup   fcmm speedup "
+echo "(mln)        insertions   (serial)   (TBB)    (fcmm)   over serial    over TBB     "
 echo "-----------------------------------------------------------------------------------"
 
 for NUM_MILLION_OPERATIONS in $NUM_MILLION_OPERATIONS_LIST

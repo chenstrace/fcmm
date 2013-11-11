@@ -11,7 +11,7 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *      This product includes Fcmm, a software developed by Giacomo Drago.
+ *      This product includes fcmm, a software developed by Giacomo Drago.
  *      Website: http://projects.giacomodrago.com/fcmm
  * 4. Neither the name of Giacomo Drago nor the
  *    names of its contributors may be used to endorse or promote products
@@ -58,7 +58,7 @@ public:
 
 typedef std::unordered_map<Key, Value, KeyHash1> StdMapType;
 typedef tbb::concurrent_hash_map<Key, Value, KeyHashCompareTbb> TbbConcurrentMapType;
-typedef Fcmm<Key, Value, KeyHash1, KeyHash2> FcmmType;
+typedef fcmm::Fcmm<Key, Value, KeyHash1, KeyHash2> FcmmType;
 
 void threadFunction(int threadNo, int numOperationsPerThread, float insertOperationsPercent,
                     std::function<void(const Key& key)> find, std::function<void(const Key& key)> insert) {
@@ -165,7 +165,7 @@ int main(int argc, char** argv) {
 
         std::cout << std::endl;
 
-        std::cout << "Comparative Benchmark of Fcmm and tbb::concurrent_hash_map" << std::endl << std::endl;
+        std::cout << "Comparative Benchmark of fcmm and tbb::concurrent_hash_map" << std::endl << std::endl;
 
         std::cout << "Number of threads: " << numThreads << std::endl
                   << "Number of operations: " << numMillionOperations << " million" << std::endl
@@ -183,7 +183,7 @@ int main(int argc, char** argv) {
     int elapsedTbb = benchmark(runTbb, expectedNumEntries, numThreads, numOperationsPerThread, insertOperationsPercent);
     if (!printAsRow) std::cout << "Time elapsed: " << elapsedTbb << "ms." << std::endl << std::endl;
 
-    if (!printAsRow) std::cout << "Running benchmark with Fcmm..." << std::endl;
+    if (!printAsRow) std::cout << "Running benchmark with fcmm..." << std::endl;
     int elapsedFcmm = benchmark(runFcmm, expectedNumEntries, numThreads, numOperationsPerThread, insertOperationsPercent, verbose);
     if (!printAsRow) std::cout << "Time elapsed: " << elapsedFcmm << " ms." << std::endl << std::endl;
 
@@ -191,8 +191,8 @@ int main(int argc, char** argv) {
     float speedupOverTbb = (float) elapsedTbb / elapsedFcmm;
 
     if (!printAsRow) {
-        std::cout << "Fcmm speedup over serial execution (std::unordered_map): " << speedupOverSerial << std::endl;
-        std::cout << "Fcmm speedup over TBB: " << speedupOverTbb << std::endl;
+        std::cout << "fcmm speedup over serial execution (std::unordered_map): " << speedupOverSerial << std::endl;
+        std::cout << "fcmm speedup over TBB: " << speedupOverTbb << std::endl;
     } else {
         std::cout << std::left << std::fixed << std::setprecision(2)
                   << std::setw(13) << (int) numMillionOperations
@@ -206,5 +206,5 @@ int main(int argc, char** argv) {
     }
 
     return EXIT_SUCCESS;
-    
+
 }

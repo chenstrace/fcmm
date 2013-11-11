@@ -11,7 +11,7 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *      This product includes Fcmm, a software developed by Giacomo Drago.
+ *      This product includes fcmm, a software developed by Giacomo Drago.
  *      Website: http://projects.giacomodrago.com/fcmm
  * 4. Neither the name of Giacomo Drago nor the
  *    names of its contributors may be used to endorse or promote products
@@ -115,8 +115,8 @@ bool checkEntryConsistency(const Key& key, const Value& actualValue, const Value
 
 template<typename FcmmType>
 void printStats(const FcmmType& map) {
-    std::cout << "Statistics for the Fcmm instance: " << std::endl;
-    FcmmStats stats = map.getStats();
+    std::cout << "Statistics for the fcmm instance: " << std::endl;
+    fcmm::Stats stats = map.getStats();
     std::cout << "Number of entries: " << stats.numEntries << std::endl;
     std::cout << "Number of submaps: " << stats.numSubmaps << std::endl;
     for (std::size_t i = 0; i < stats.numSubmaps; i++) {
