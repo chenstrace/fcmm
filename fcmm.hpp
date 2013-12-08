@@ -176,21 +176,16 @@ struct Stats {
 };
 
 /**
- * @brief This dummy hash function (returning always 0) is the default for the `KeyHash2` template
- * parameter of @link Fcmm @endlink.
- *
- * It is <b>strongly</b> recommended not to rely on this default (which basically is a fallback
- * to single hashing with linear probing) and provide an actual second hash function, completely independent
- * from the first one.
+ * @brief This hash function is the default for the `KeyHash2` template parameter of @link Fcmm @endlink.
+ * It is only available for <a href="http://en.cppreference.com/w/cpp/types/is_integral">integral types</a>.
  */
-template<typename Key>
-class DummyHashFunction {
+template<typename Key, typename Enable = typename std::enable_if<std::is_integral<Key>::value, Key>::type>
+class SecondHashFunction {
+private:
+    std::hash<Key> hash;
 public:
-    /**
-     * @brief Returns 0.
-     */
-    constexpr std::size_t operator()(const Key& /* ignored */) const {
-        return 0;
+    std::size_t operator()(const Key& key) const {
+        return hash(~key);
     }
 };
 
@@ -222,7 +217,7 @@ template<
     typename Key,
     typename Value,
     typename KeyHash1 = std::hash<Key>,
-    typename KeyHash2 = DummyHashFunction<Key>,
+    typename KeyHash2 = SecondHashFunction<Key>,
     typename KeyEqual = std::equal_to<Key>
 >
 class Fcmm {
