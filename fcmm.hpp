@@ -948,7 +948,7 @@ public:
      *
      * The new map is created via `new` and it is responsibility of the caller to `delete` it.
      */
-    
+
     Fcmm* clone() const {
         return filter([](const Entry&) { return true; });
     }
