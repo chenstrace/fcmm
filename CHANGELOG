@@ -1,0 +1,14 @@
+Fast Concurrent Memoization Map (fcmm)
+http://projects.giacomodrago.com/fcmm
+
+
+CHANGELOG
+
+0.9 beta
+    - Initial release
+
+1.0 RC
+    - Improved performance (~25% faster)
+    - Replaced default second hash function (dummy hash) with a proper hash
+      function for integral types based on std::hash<T>
+    - Moved declarations into a namespace
