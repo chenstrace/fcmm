@@ -441,6 +441,7 @@ private:
 
         /**
          * @brief Inserts a new entry into the submap, if the submap doesn't already contain an entry with the same key.
+         * The key will be moved, if possible.
          *
          * The value is calculated as needed by calling the `computeValue` function or functor.
          *
@@ -457,8 +458,8 @@ private:
          * @throw FullSubmapException    thrown if the new entry could not be inserted because the submap is full
          *
          */
-        template<typename ComputeValueFunction>
-        std::pair<std::size_t, bool> insert(const Key& key, std::size_t hash1, std::size_t hash2, ComputeValueFunction computeValue) {
+        template<typename KeyType, typename ComputeValueFunction>
+        std::pair<std::size_t, bool> insert(KeyType&& key, std::size_t hash1, std::size_t hash2, ComputeValueFunction computeValue) {
 
             Value value = Value(); // to avoid "maybe-uninitialized" warnings
             bool valueComputed = false;
@@ -487,8 +488,8 @@ private:
 
                         // the bucket is now busy and this thread is the only one that can write on it
 
-                        bucket.entry.first = key;
-                        bucket.entry.second = value;
+                        bucket.entry.first = std::move(key);
+                        bucket.entry.second = std::move(value);
                         bucket.state.store(Bucket::State::VALID, std::memory_order_release); // mark the bucket as valid
 
                         incrementNumValidBuckets();
@@ -693,7 +694,7 @@ private:
     }
 
     /**
-     * @brief Inserts a new entry into the map.
+     * @brief Inserts a new entry into the map. The key will be moved, if possible.
      *
      * The value is calculated as needed by calling the `computeValue` function or functor.
      *
@@ -707,8 +708,8 @@ private:
      * @return                       a pair consisting of a @link const_iterator @endlink to the inserted entry (or to the entry
      *                               that prevented the insertion) and a `bool` denoting whether the insertion took place
      */
-    template<typename ComputeValueFunction>
-    std::pair<const_iterator, bool> insertHelper(const Key& key, std::size_t hash1, std::size_t hash2, ComputeValueFunction computeValue) {
+    template<typename KeyType, typename ComputeValueFunction>
+    std::pair<const_iterator, bool> insertHelper(KeyType&& key, std::size_t hash1, std::size_t hash2, ComputeValueFunction computeValue) {
 
         while (1) {
 
@@ -730,7 +731,8 @@ private:
             }
 
             try {
-                const std::pair<std::size_t, bool> insertResult = lastSubmap.insert(key, hash1, hash2, computeValue);
+                const std::pair<std::size_t, bool> insertResult =
+                        lastSubmap.insert(std::forward<KeyType>(key), hash1, hash2, computeValue);
                 if (insertResult.second) {
                     incrementNumEntries();
                 }
@@ -838,6 +840,24 @@ public:
     std::pair<const_iterator, bool> insert(const Key& key, ComputeValueFunction computeValue) {
         return insertHelper(key, keyHash1(key), keyHash2(key), computeValue);
     }
+    
+    /**
+     * @brief Inserts a new entry into the map. The key will be moved, if possible.
+     *
+     * The value is calculated as needed by calling the `computeValue` function or functor.
+     *
+     * @param key                    the key of the entry to be inserted
+     * @param computeValue           a function or functor that, given the key, calculates the corresponding value
+     *
+     * @tparam ComputeValueFunction  function or functor implementing `Value operator()(const Key&)`
+     *
+     * @return                       a pair consisting of a @link const_iterator @endlink to the inserted entry (or to the entry
+     *                               that prevented the insertion) and a `bool` denoting whether the insertion took place
+     */
+    template<typename ComputeValueFunction>
+    std::pair<const_iterator, bool> insert(Key&& key, ComputeValueFunction computeValue) {
+        return insertHelper(key, keyHash1(key), keyHash2(key), computeValue);
+    }
 
     /**
      * @brief Inserts a new entry into the map.
@@ -850,7 +870,21 @@ public:
      * @see insert(const Key&, ComputeValueFunction)
      */
     std::pair<const_iterator, bool> insert(const Entry& entry) {
-        return insert(entry.first, [&entry](const Key&) { return entry.second; });
+        return insert(entry.first, [&entry](const Key&) -> const Value& { return entry.second; });
+    }
+    
+    /**
+     * @brief Inserts a new entry into the map. The members of the entry will be moved, if possible.
+     *
+     * @param entry  the entry to be inserted
+     *
+     * @return       a pair consisting of a @link const_iterator @endlink to the inserted entry (or to the entry
+     *               that prevented the insertion) and a `bool` denoting whether the insertion took place
+     *
+     * @see insert(const Key&, ComputeValueFunction)
+     */
+    std::pair<const_iterator, bool> insert(Entry&& entry) {
+        return insert(std::move(entry.first), [&entry](const Key&) -> Value&& { return std::move(entry.second); });
     }
 
     /**
@@ -866,7 +900,7 @@ public:
      */
     template<typename... Args>
     std::pair<const_iterator, bool> emplace(Args&&... args) {
-        return insert(std::make_pair(std::forward<Args>(args)...));
+        return insert(Entry(std::forward<Args>(args)...));
     }
 
     /**
