@@ -6,7 +6,7 @@ CC                = g++
 CFLAGS_COMMON     = -I".." -std=c++11 -Wall
 CFLAGS_RELEASE    = $(CFLAGS_COMMON) -O3 -fexpensive-optimizations
 CFLAGS_DEBUG      = $(CFLAGS_COMMON) -O0 -g
-CFLAGS            = $(CFLAGS_DEBUG)
+CFLAGS            = $(CFLAGS_RELEASE)
 LDFLAGS           = -pthread
 LDFLAGS_TBB       = -ltbb
 
