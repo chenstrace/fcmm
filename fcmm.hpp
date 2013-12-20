@@ -90,7 +90,8 @@ static const float FIRST_SUBMAP_CAPACITY_MULTIPLIER = 1.03f;
  *
  * Adapted from http://stackoverflow.com/a/5694432/671092
  */
-static bool isPrime(std::size_t n) noexcept {
+template<typename T>
+static bool isPrime(const T& n, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr) {
 
     std::size_t divisor = 3;
     while (1) {
@@ -111,7 +112,8 @@ static bool isPrime(std::size_t n) noexcept {
  *
  * Adapted from http://stackoverflow.com/a/5694432/671092
  */
-static std::size_t nextPrime(std::size_t n) noexcept {
+template<typename T>
+static T nextPrime(T n, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr) {
 
     if (n <= 2)
         return 2;
@@ -212,12 +214,12 @@ public:
  *                      move-constructible, copy-assignable or move-assignable)
  * @tparam  KeyHash1    the type of a function object that calculates the hash of the key;
  *                      it should have the same interface as
- *                      <a href="http://en.cppreference.com/w/cpp/utility/hash">std::hash<T></a>
+ *                      <a href="http://en.cppreference.com/w/cpp/utility/hash">`std::hash<T>`</a>
  * @tparam  KeyHash2    the type of another function object that calculates the hash of the key;
- *                      it should be <i>completely independent from KeyHash1</i>
+ *                      it should be <b>completely independent from `KeyHash1`</b>
  * @tparam  KeyEqual    the type of the function object that checks the equality of the two keys;
  *                      it should have the same interface as
- *                      <a href="http://en.cppreference.com/w/cpp/utility/functional/equal_to">std::equal_to<T></a>
+ *                      <a href="http://en.cppreference.com/w/cpp/utility/functional/equal_to">`std::equal_to<T>`</a>
  */
 template<
     typename Key,
@@ -243,7 +245,14 @@ class Fcmm {
 
 public:
 
+    /**
+     * @brief The type of the key in each entry
+     */
     typedef Key key_type;
+
+    /**
+     * @brief The type of the value in each entry
+     */
     typedef Value mapped_type;
 
     /**
@@ -771,7 +780,7 @@ public:
      * @param maxLoadFactor        the maximum load factor of each submap:
      *                             it should be a floating point number in the open interval (0, 1)
      * @param maxNumSubmaps        the maximum number of submaps that can be created (at least 1):
-     *                             if this limit is exceeded, a std::runtime_error is thrown
+     *                             if this limit is exceeded, a `std::runtime_error` is thrown
      */
     Fcmm(std::size_t estimatedNumEntries = 0,
          float maxLoadFactor = DEFAULT_MAX_LOAD_FACTOR,
@@ -793,7 +802,7 @@ public:
         // calculate the capacity of the first submap
         const std::size_t firstSubmapCapacity = std::max(
                     FIRST_SUBMAP_MIN_CAPACITY,
-                    nextPrime(FIRST_SUBMAP_CAPACITY_MULTIPLIER * estimatedNumEntries / maxLoadFactor));
+                    nextPrime((std::size_t) (FIRST_SUBMAP_CAPACITY_MULTIPLIER * estimatedNumEntries / maxLoadFactor)));
 
         // create the first submap
         getSubmap(0).reset(new Submap(firstSubmapCapacity, maxLoadFactor));
