@@ -206,8 +206,10 @@ public:
  *
  * Due to its features, this data structure is fit to be used for memoization in concurrent environments.
  *
- * @tparam  Key         the type of the key in each entry (default-constructible and copy-constructible)
- * @tparam  Value       the type of the value in each entry (default-constructible and copy-constructible)
+ * @tparam  Key         the type of the key in each entry (default-constructible, copy-constructible or
+ *                      move-constructible, copy-assignable or move-assignable)
+ * @tparam  Value       the type of the value in each entry (default-constructible, copy-constructible or
+ *                      move-constructible, copy-assignable or move-assignable)
  * @tparam  KeyHash1    the type of a function object that calculates the hash of the key;
  *                      it should have the same interface as
  *                      <a href="http://en.cppreference.com/w/cpp/utility/hash">std::hash<T></a>
@@ -226,11 +228,24 @@ template<
 >
 class Fcmm {
 
+    static_assert(std::is_default_constructible<Key>::value, "Key has to be default-constructible");
+    static_assert(std::is_default_constructible<Value>::value, "Value has to be default-constructible");
+
+    static_assert(std::is_copy_constructible<Key>::value || std::is_move_constructible<Key>::value,
+                  "Key has to be copy-constructible or move-constructible, or both");
+    static_assert(std::is_copy_constructible<Value>::value || std::is_move_constructible<Value>::value,
+                  "Value has to be copy-constructible or move-constructible, or both");
+
+    static_assert(std::is_copy_assignable<Key>::value || std::is_move_assignable<Key>::value,
+                  "Key has to be copy-assignable or move-assignable, or both");
+    static_assert(std::is_copy_assignable<Value>::value || std::is_move_assignable<Value>::value,
+                  "Value has to be copy-assignable or move-assignable, or both");
+
 public:
 
     typedef Key key_type;
     typedef Value mapped_type;
-    
+
     /**
      * @brief An entry of the map
      */
@@ -840,7 +855,7 @@ public:
     std::pair<const_iterator, bool> insert(const Key& key, ComputeValueFunction computeValue) {
         return insertHelper(key, keyHash1(key), keyHash2(key), computeValue);
     }
-    
+
     /**
      * @brief Inserts a new entry into the map. The key will be moved, if possible.
      *
@@ -872,7 +887,7 @@ public:
     std::pair<const_iterator, bool> insert(const Entry& entry) {
         return insert(entry.first, [&entry](const Key&) -> const Value& { return entry.second; });
     }
-    
+
     /**
      * @brief Inserts a new entry into the map. The members of the entry will be moved, if possible.
      *
