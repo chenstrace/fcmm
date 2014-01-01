@@ -1043,7 +1043,7 @@ public:
      * @brief A const <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">input iterator</a>
      * for iterating over the map. Iterators are never invalidated.
      */
-    class const_iterator : std::input_iterator_tag {
+    class const_iterator : public std::iterator<std::input_iterator_tag, Entry> {
 
         friend class Fcmm;
 
@@ -1196,6 +1196,16 @@ public:
          */
         const Entry* operator->() const {
             return &getEntry();
+        }
+
+        /**
+         * @brief Swap function
+         */
+        friend void swap(const_iterator it1, const_iterator it2) {
+            std::swap(it1.map, it2.map);
+            std::swap(it1.submapIndex, it2.submapIndex);
+            std::swap(it1.bucketIndex, it2.bucketIndex);
+            std::swap(it1.end, it2.end);
         }
 
     };
