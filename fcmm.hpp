@@ -1201,7 +1201,7 @@ public:
         /**
          * @brief Swap function
          */
-        friend void swap(const_iterator it1, const_iterator it2) {
+        friend void swap(const_iterator& it1, const_iterator& it2) {
             std::swap(it1.map, it2.map);
             std::swap(it1.submapIndex, it2.submapIndex);
             std::swap(it1.bucketIndex, it2.bucketIndex);
