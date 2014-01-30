@@ -12,3 +12,7 @@ CHANGELOG
     - Replaced default second hash function (dummy hash) with a proper hash
       function for integral types based on std::hash<T>
     - Moved declarations into a namespace
+
+1.0
+    - Support for move semantics
+    - Small fixes
