@@ -837,7 +837,7 @@ public:
     }
 
     /**
-     * @brief Returns a const reference to the value of an entry with key equal to `key`.
+     * @brief Returns a const reference to the value of an entry having key equal to `key`.
      * If no such entry exists, an exception of type `std::out_of_range` is thrown.
      *
      * @param key                the key of the entry to be found
@@ -1043,7 +1043,7 @@ public:
      * @brief A const <a href="http://en.cppreference.com/w/cpp/concept/InputIterator">input iterator</a>
      * for iterating over the map. Iterators are never invalidated.
      */
-    class const_iterator : public std::iterator<std::input_iterator_tag, Entry> {
+    class const_iterator : public std::iterator<std::input_iterator_tag, const Entry> {
 
         friend class Fcmm;
 
