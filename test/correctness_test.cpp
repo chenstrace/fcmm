@@ -140,7 +140,7 @@ void performTest(bool verbose = false) {
 
     if (performedInsertionsTotal >= EXPECTED_NUM_ENTRIES) {
         if (verbose) {
-            const float duplicatesPercent = 100.0f * duplicates / performedInsertionsTotal;
+            const double duplicatesPercent = 100.0f * duplicates / performedInsertionsTotal;
             std::cout << "Minimum total insertions: " << EXPECTED_NUM_ENTRIES << ", "
                     << "actual: " << performedInsertionsTotal
                     << std::endl

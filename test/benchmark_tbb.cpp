@@ -60,19 +60,19 @@ typedef std::unordered_map<Key, Value, KeyHash1> StdMapType;
 typedef tbb::concurrent_hash_map<Key, Value, KeyHashCompareTbb> TbbConcurrentMapType;
 typedef fcmm::Fcmm<Key, Value, KeyHash1, KeyHash2> FcmmType;
 
-void threadFunction(int threadNo, int numOperationsPerThread, float insertOperationsPercent,
+void threadFunction(int threadNo, int numOperationsPerThread, double insertOperationsPercent,
                     std::function<void(const Key& key)> find, std::function<void(const Key& key)> insert) {
 
     std::default_random_engine generator(threadNo);
     std::uniform_int_distribution<std::uint16_t> randNum(0, KEY_FIELD_MAX_VALUE);
-    std::uniform_real_distribution<float> randFloat(0.0f, 100.0f);
+    std::uniform_real_distribution<double> randDouble(0.0f, 100.0f);
 
     for (int i = 0; i < numOperationsPerThread; i++) {
         std::uint16_t a = randNum(generator);
         std::uint16_t b = randNum(generator);
         std::uint16_t c = randNum(generator);
         Key key(a, b, c);
-        if (randFloat(generator) < insertOperationsPercent) {
+        if (randDouble(generator) < insertOperationsPercent) {
             insert(key);
         } else {
             find(key);
@@ -81,7 +81,7 @@ void threadFunction(int threadNo, int numOperationsPerThread, float insertOperat
 
 }
 
-void runSerial(int expectedNumEntries, int numOperations, float insertOperationsPercent) {
+void runSerial(int expectedNumEntries, int numOperations, double insertOperationsPercent) {
 
     StdMapType map(expectedNumEntries);
 
@@ -100,7 +100,7 @@ void runSerial(int expectedNumEntries, int numOperations, float insertOperations
 
 }
 
-void runTbb(int expectedNumEntries, int numThreads, int numOperationsPerThread, float insertOperationsPercent) {
+void runTbb(int expectedNumEntries, int numThreads, int numOperationsPerThread, double insertOperationsPercent) {
 
     TbbConcurrentMapType map(expectedNumEntries);
 
@@ -120,7 +120,7 @@ void runTbb(int expectedNumEntries, int numThreads, int numOperationsPerThread, 
 
 }
 
-void runFcmm(int expectedNumEntries, int numThreads, int numOperationsPerThread, float insertOperationsPercent, bool verbose = false) {
+void runFcmm(int expectedNumEntries, int numThreads, int numOperationsPerThread, double insertOperationsPercent, bool verbose = false) {
 
     FcmmType map(expectedNumEntries);
 
@@ -148,12 +148,12 @@ int main(int argc, char** argv) {
     }
 
     int numThreads = atoi(argv[1]);
-    float numMillionOperations = atof(argv[2]);
-    float insertOperationsPercent = atof(argv[3]);
+    double numMillionOperations = atof(argv[2]);
+    double insertOperationsPercent = atof(argv[3]);
 
-    int numOperations = numMillionOperations * 1.0e6f;
-    int numOperationsPerThread = numOperations / numThreads;
-    int expectedNumEntries = numOperations * (insertOperationsPercent / 100.0f);
+    int numOperations = (int)(numMillionOperations * 1.0e6);
+    int numOperationsPerThread = (int)(numOperations / numThreads);
+    int expectedNumEntries = (int)(numOperations * (insertOperationsPercent / 100.0));
 
     char* printAsRowEnv = getenv("FCMM_PRINT_AS_ROW");
     char* verboseEnv = getenv("FCMM_VERBOSE");
@@ -176,19 +176,19 @@ int main(int argc, char** argv) {
     }
 
     if (!printAsRow) std::cout << "Running benchmark with std::unordered_map (serial execution)..." << std::endl;
-    int elapsedSerial = benchmark(runSerial, expectedNumEntries, numOperations, insertOperationsPercent);
+    long long elapsedSerial = benchmark(runSerial, expectedNumEntries, numOperations, insertOperationsPercent);
     if (!printAsRow) std::cout << "Time elapsed: " << elapsedSerial << " ms." << std::endl << std::endl;
 
     if (!printAsRow) std::cout << "Running benchmark with tbb::concurrent_hash_map..." << std::endl;
-    int elapsedTbb = benchmark(runTbb, expectedNumEntries, numThreads, numOperationsPerThread, insertOperationsPercent);
+    long long elapsedTbb = benchmark(runTbb, expectedNumEntries, numThreads, numOperationsPerThread, insertOperationsPercent);
     if (!printAsRow) std::cout << "Time elapsed: " << elapsedTbb << "ms." << std::endl << std::endl;
 
     if (!printAsRow) std::cout << "Running benchmark with fcmm..." << std::endl;
-    int elapsedFcmm = benchmark(runFcmm, expectedNumEntries, numThreads, numOperationsPerThread, insertOperationsPercent, verbose);
+    long long elapsedFcmm = benchmark(runFcmm, expectedNumEntries, numThreads, numOperationsPerThread, insertOperationsPercent, verbose);
     if (!printAsRow) std::cout << "Time elapsed: " << elapsedFcmm << " ms." << std::endl << std::endl;
 
-    float speedupOverSerial = (float) elapsedSerial / elapsedFcmm;
-    float speedupOverTbb = (float) elapsedTbb / elapsedFcmm;
+    double speedupOverSerial = (double) elapsedSerial / elapsedFcmm;
+    double speedupOverTbb = (double) elapsedTbb / elapsedFcmm;
 
     if (!printAsRow) {
         std::cout << "fcmm speedup over serial execution (std::unordered_map): " << speedupOverSerial << std::endl;

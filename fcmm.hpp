@@ -55,6 +55,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <utility>
+#include <algorithm>
 #include <vector>
 #include <memory>
 #include <functional>

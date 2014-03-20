@@ -138,12 +138,12 @@ long long elapsedMillis(timestamp_t start, timestamp_t end) {
 }
 
 template<typename Function, typename... Arguments>
-int benchmark(Function function, Arguments... args) {
+long long benchmark(Function function, Arguments... args) {
 
     timestamp_t start = now();
     function(args...);
     timestamp_t end = now();
-    int elapsedMs = elapsedMillis(start, end);
+    long long elapsedMs = elapsedMillis(start, end);
 
     return elapsedMs;
 
