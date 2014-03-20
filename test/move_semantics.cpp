@@ -32,6 +32,7 @@
 #include <fcmm.hpp>
 
 #include <iostream>
+#include <string>
 
 struct Key {
     int i;
