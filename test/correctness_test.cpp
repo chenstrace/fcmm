@@ -33,6 +33,7 @@
 
 #include "common.hpp"
 
+#include <string>
 #include <iostream>
 #include <vector>
 #include <array>

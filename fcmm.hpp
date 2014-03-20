@@ -45,6 +45,13 @@
 #ifndef FCMM_H_
 #define FCMM_H_
 
+// The noexcept specifier is unsupported in Visual Studio
+#ifndef _MSC_VER
+#define NOEXCEPT noexcept
+#else
+#define NOEXCEPT
+#endif
+
 #include <cstddef>
 #include <cstdint>
 #include <utility>
@@ -335,7 +342,7 @@ private:
         /**
          * @brief Returns the capacity of this submap
          */
-        std::size_t getCapacity() const noexcept {
+        std::size_t getCapacity() const NOEXCEPT {
             return buckets.size();
         }
 
@@ -360,14 +367,14 @@ private:
         /**
          * @brief Returns the number of entries in this submap
          */
-        std::size_t getNumValidBuckets() const noexcept {
+        std::size_t getNumValidBuckets() const NOEXCEPT {
             return numValidBuckets.load(std::memory_order_relaxed);
         }
 
         /**
          * @brief Increments the number of valid buckets by 1
          */
-        void incrementNumValidBuckets() noexcept {
+        void incrementNumValidBuckets() NOEXCEPT {
             numValidBuckets.fetch_add(1, std::memory_order_relaxed);
         }
 
@@ -375,7 +382,7 @@ private:
          * @brief Given the second hash of a key, calculates the corresponding
          * double hashing probe increment
          */
-        std::size_t calculateProbeIncrement(std::size_t hash2) const noexcept {
+        std::size_t calculateProbeIncrement(std::size_t hash2) const NOEXCEPT {
             const std::size_t modulus = getCapacity() - 1;
             return 1 + hash2 % modulus; // in [1, capacity - 1]
         }
@@ -551,7 +558,7 @@ private:
         /**
          * @brief Returns `true` if the submap is overloaded
          */
-        bool isOverloaded() const noexcept {
+        bool isOverloaded() const NOEXCEPT {
             return (float) getNumValidBuckets() / getCapacity() >= maxLoadFactor;
         }
 
@@ -602,7 +609,7 @@ private:
     /**
      * @brief Returns the maximum number of submaps
      */
-    std::size_t getMaxNumSubmaps() const noexcept {
+    std::size_t getMaxNumSubmaps() const NOEXCEPT {
         return submaps.size();
     }
 
@@ -627,28 +634,28 @@ private:
     /**
      * @brief Returns the number of submaps
      */
-    std::size_t getNumSubmaps() const noexcept {
+    std::size_t getNumSubmaps() const NOEXCEPT {
         return numSubmaps.load(std::memory_order_acquire);
     }
 
     /**
      * @brief Returns the index of the last submap
      */
-    std::size_t getLastSubmapIndex() const noexcept {
+    std::size_t getLastSubmapIndex() const NOEXCEPT {
         return getNumSubmaps() - 1;
     }
 
     /**
      * @brief Increments the number of submaps by 1
      */
-    void incrementNumSubmaps() noexcept {
+    void incrementNumSubmaps() NOEXCEPT {
         numSubmaps.fetch_add(1, std::memory_order_release);
     }
 
     /**
      * @brief Increments the number of entries by 1
      */
-    void incrementNumEntries() noexcept {
+    void incrementNumEntries() NOEXCEPT {
         numEntries.fetch_add(1, std::memory_order_relaxed);
     }
 
@@ -788,8 +795,10 @@ public:
             maxLoadFactor(maxLoadFactor),
             numSubmaps(1),
             submaps(maxNumSubmaps),
-            numEntries(0),
-            expanding(ATOMIC_FLAG_INIT) {
+            numEntries(0) {
+
+        // Not using ATOMIC_FLAG_INIT to workaround a Visual Studio bug
+        expanding.clear();
 
         if (maxLoadFactor <= 0.0f || maxLoadFactor >= 1.0f) {
             throw std::logic_error("Invalid maximum load factor");
@@ -930,49 +939,49 @@ public:
     /**
      * @brief Returns the number of entries in the map
      */
-    std::size_t getNumEntries() const noexcept {
+    std::size_t getNumEntries() const NOEXCEPT {
         return numEntries.load(std::memory_order_relaxed);
     }
 
     /**
      * @brief Alias for getNumEntries()
      */
-    std::size_t size() const noexcept {
+    std::size_t size() const NOEXCEPT {
         return getNumEntries();
     }
 
     /**
      * @brief Returns `true` if the map has no elements, `false` otherwise
      */
-    bool empty() const noexcept {
+    bool empty() const NOEXCEPT {
         return getNumEntries() == 0;
     }
 
     /**
      * @brief Returns a @link const_iterator @endlink pointing to the first entry
      */
-    const_iterator begin() const noexcept {
+    const_iterator begin() const NOEXCEPT {
         return const_iterator(this);
     }
 
     /**
      * @brief Returns a @link const_iterator @endlink pointing to the first entry
      */
-    const_iterator cbegin() const noexcept {
+    const_iterator cbegin() const NOEXCEPT {
         return begin();
     }
 
     /**
      * @brief Returns a @link const_iterator @endlink pointing to the past-the-end entry
      */
-    const_iterator end() const noexcept {
+    const_iterator end() const NOEXCEPT {
         return const_iterator(this, true);
     }
 
     /**
      * @brief Returns a @link const_iterator @endlink pointing to the past-the-end entry
      */
-    const_iterator cend() const noexcept {
+    const_iterator cend() const NOEXCEPT {
         return end();
     }
 

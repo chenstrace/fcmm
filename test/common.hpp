@@ -133,7 +133,7 @@ timestamp_t now() {
     return std::chrono::system_clock::now();
 }
 
-int elapsedMillis(timestamp_t start, timestamp_t end) {
+long long elapsedMillis(timestamp_t start, timestamp_t end) {
     return std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
 }
 
