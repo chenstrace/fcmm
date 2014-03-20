@@ -4,8 +4,12 @@ http://projects.giacomodrago.com/fcmm
 
 CHANGELOG
 
-0.9 beta
-    - Initial release
+1.0.1
+    - Small changes to allow building under Visual Studio 2013
+
+1.0
+    - Support for move semantics
+    - Small fixes
 
 1.0 RC
     - Improved performance (~25% faster)
@@ -13,6 +17,5 @@ CHANGELOG
       function for integral types based on std::hash<T>
     - Moved declarations into a namespace
 
-1.0
-    - Support for move semantics
-    - Small fixes
+0.9 beta
+    - Initial release

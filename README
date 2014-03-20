@@ -24,9 +24,10 @@ The map is implemented as a single C++ header file with no external dependencies
 IMPORTANT NOTES:
 
  - In order to compile fcmm, you'll need a C++11 compliant compiler
-    o Under GNU/Linux, it successfully compiles with gcc 4.7.3
-    o Under Windows, it successfully compiles with MinGW-w64
-      (x64-4.8.1-posix-seh-rev2)
+    o Under GNU/Linux and Mac OS X, it successfully compiles with gcc 4.7.3 or better
+    o Under Windows, it successfully compiles with:
+        - Visual Studio 2013 Update 2
+        - MinGW-w64 (x64-4.8.1-posix-seh-rev2)
     o When compiling with gcc, please remember to add the -std=c++11 command
       line switch
 
