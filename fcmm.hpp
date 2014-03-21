@@ -57,6 +57,7 @@
 #include <utility>
 #include <algorithm>
 #include <vector>
+#include <string>
 #include <memory>
 #include <functional>
 #include <type_traits>
