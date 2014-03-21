@@ -47,9 +47,9 @@
 
 // The noexcept specifier is unsupported in Visual Studio
 #ifndef _MSC_VER
-#define NOEXCEPT noexcept
+#define FCMM_NOEXCEPT noexcept
 #else
-#define NOEXCEPT
+#define FCMM_NOEXCEPT
 #endif
 
 #include <cstddef>
@@ -343,7 +343,7 @@ private:
         /**
          * @brief Returns the capacity of this submap
          */
-        std::size_t getCapacity() const NOEXCEPT {
+        std::size_t getCapacity() const FCMM_NOEXCEPT {
             return buckets.size();
         }
 
@@ -368,14 +368,14 @@ private:
         /**
          * @brief Returns the number of entries in this submap
          */
-        std::size_t getNumValidBuckets() const NOEXCEPT {
+        std::size_t getNumValidBuckets() const FCMM_NOEXCEPT {
             return numValidBuckets.load(std::memory_order_relaxed);
         }
 
         /**
          * @brief Increments the number of valid buckets by 1
          */
-        void incrementNumValidBuckets() NOEXCEPT {
+        void incrementNumValidBuckets() FCMM_NOEXCEPT {
             numValidBuckets.fetch_add(1, std::memory_order_relaxed);
         }
 
@@ -383,7 +383,7 @@ private:
          * @brief Given the second hash of a key, calculates the corresponding
          * double hashing probe increment
          */
-        std::size_t calculateProbeIncrement(std::size_t hash2) const NOEXCEPT {
+        std::size_t calculateProbeIncrement(std::size_t hash2) const FCMM_NOEXCEPT {
             const std::size_t modulus = getCapacity() - 1;
             return 1 + hash2 % modulus; // in [1, capacity - 1]
         }
@@ -559,7 +559,7 @@ private:
         /**
          * @brief Returns `true` if the submap is overloaded
          */
-        bool isOverloaded() const NOEXCEPT {
+        bool isOverloaded() const FCMM_NOEXCEPT {
             return (float) getNumValidBuckets() / getCapacity() >= maxLoadFactor;
         }
 
@@ -610,7 +610,7 @@ private:
     /**
      * @brief Returns the maximum number of submaps
      */
-    std::size_t getMaxNumSubmaps() const NOEXCEPT {
+    std::size_t getMaxNumSubmaps() const FCMM_NOEXCEPT {
         return submaps.size();
     }
 
@@ -635,28 +635,28 @@ private:
     /**
      * @brief Returns the number of submaps
      */
-    std::size_t getNumSubmaps() const NOEXCEPT {
+    std::size_t getNumSubmaps() const FCMM_NOEXCEPT {
         return numSubmaps.load(std::memory_order_acquire);
     }
 
     /**
      * @brief Returns the index of the last submap
      */
-    std::size_t getLastSubmapIndex() const NOEXCEPT {
+    std::size_t getLastSubmapIndex() const FCMM_NOEXCEPT {
         return getNumSubmaps() - 1;
     }
 
     /**
      * @brief Increments the number of submaps by 1
      */
-    void incrementNumSubmaps() NOEXCEPT {
+    void incrementNumSubmaps() FCMM_NOEXCEPT {
         numSubmaps.fetch_add(1, std::memory_order_release);
     }
 
     /**
      * @brief Increments the number of entries by 1
      */
-    void incrementNumEntries() NOEXCEPT {
+    void incrementNumEntries() FCMM_NOEXCEPT {
         numEntries.fetch_add(1, std::memory_order_relaxed);
     }
 
@@ -940,49 +940,49 @@ public:
     /**
      * @brief Returns the number of entries in the map
      */
-    std::size_t getNumEntries() const NOEXCEPT {
+    std::size_t getNumEntries() const FCMM_NOEXCEPT {
         return numEntries.load(std::memory_order_relaxed);
     }
 
     /**
      * @brief Alias for getNumEntries()
      */
-    std::size_t size() const NOEXCEPT {
+    std::size_t size() const FCMM_NOEXCEPT {
         return getNumEntries();
     }
 
     /**
      * @brief Returns `true` if the map has no elements, `false` otherwise
      */
-    bool empty() const NOEXCEPT {
+    bool empty() const FCMM_NOEXCEPT {
         return getNumEntries() == 0;
     }
 
     /**
      * @brief Returns a @link const_iterator @endlink pointing to the first entry
      */
-    const_iterator begin() const NOEXCEPT {
+    const_iterator begin() const FCMM_NOEXCEPT {
         return const_iterator(this);
     }
 
     /**
      * @brief Returns a @link const_iterator @endlink pointing to the first entry
      */
-    const_iterator cbegin() const NOEXCEPT {
+    const_iterator cbegin() const FCMM_NOEXCEPT {
         return begin();
     }
 
     /**
      * @brief Returns a @link const_iterator @endlink pointing to the past-the-end entry
      */
-    const_iterator end() const NOEXCEPT {
+    const_iterator end() const FCMM_NOEXCEPT {
         return const_iterator(this, true);
     }
 
     /**
      * @brief Returns a @link const_iterator @endlink pointing to the past-the-end entry
      */
-    const_iterator cend() const NOEXCEPT {
+    const_iterator cend() const FCMM_NOEXCEPT {
         return end();
     }
 
@@ -1233,5 +1233,7 @@ public:
 };
 
 } // namespace fcmm
+
+#undef FCMM_NOEXCEPT
 
 #endif // FCMM_H_
