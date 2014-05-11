@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Giacomo Drago <giacomo@giacomodrago.com>
+ * Copyright (c) 2014, Giacomo Drago <giacomo@giacomodrago.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "fcmm.hpp"
+#include <fcmm.hpp>
 
 #include "common.hpp"
 
@@ -41,20 +41,10 @@
 #include <random>
 #include <thread>
 
-static const std::string REPORT_RECIPIENT = "Giacomo Drago <giacomo@giacomodrago.com>";
-
 static const std::uint16_t KEY_FIELD_MAX_VALUE = 255;
 static const std::size_t EXPECTED_NUM_ENTRIES = (KEY_FIELD_MAX_VALUE+1) * (KEY_FIELD_MAX_VALUE+1) * (KEY_FIELD_MAX_VALUE+1); // about 16 million
 static const int TEST_RUNS = 10;
 static const int NUM_THREADS = 4;
-
-void failTest(const std::string& message) {
-    std::cerr << std::endl << message << std::endl
-              << "TEST FAILED" << std::endl
-              << "Please report full test output along with your test environment" << std::endl
-              << "to " << REPORT_RECIPIENT << std::endl;
-    exit(EXIT_FAILURE);
-}
 
 typedef fcmm::Fcmm<Key, Value, KeyHash1, KeyHash2> FcmmType;
 
@@ -63,24 +53,22 @@ void threadFunction(int threadNo, FcmmType& map, std::array<int, NUM_THREADS>& p
     for (std::size_t i = 0; i < sequence.size(); i++) {
         sequence[i] = i;
     }
-    std::shuffle(sequence.begin(), sequence.end(), std::default_random_engine(threadNo));
+    std::shuffle(sequence.begin(), sequence.end(), std::minstd_rand(threadNo));
     for (std::uint16_t a : sequence) {
         for (std::uint16_t b : sequence) {
             for (std::uint16_t c : sequence) {
-                Key key(a, b, c);
-                auto insertResult = map.insert(key, calculate);
+                const Key key(a, b, c);
+                const auto insertResult = map.insert(key, calculate);
+                assert(insertResult.first->first == key, "Inconsistent keys after insertion [1]");
+                const auto findResult = map.find(key);
+                assert(findResult != map.end(), "Could not find the inserted entry immediately after insertion");
+                assert(findResult->first == key, "Inconsistent keys after insertion [2]");
+                const Value& insertedValue = insertResult.first->second;
+                const Value& foundValue = findResult->second;
+                const Value expectedValue = calculate(key);
+                assert(insertedValue == foundValue && insertedValue == expectedValue, "Inconsistent values after insertion");
                 if (insertResult.second) {
                     performedInsertions[threadNo]++;
-                    auto findResult = map.find(key);
-                    if (findResult == map.end()) {
-                        failTest("Could not find the inserted entry immediately after insertion.");
-                    }
-                    const Value& insertedValue = insertResult.first->second;
-                    const Value& foundValue = findResult->second;
-                    Value calculatedValue = calculate(key);
-                    if (insertedValue != foundValue || insertedValue != calculatedValue) {
-                        failTest("Inconsistent values after insertion.");
-                    }
                 }
             }
         }
@@ -88,22 +76,87 @@ void threadFunction(int threadNo, FcmmType& map, std::array<int, NUM_THREADS>& p
 }
 
 void checkConsistency(const FcmmType& map) {
+    assert(!map.empty(), "The map should not be empty");
+    assert(map.size() == map.getNumEntries(), "Inconsistent map size");
     for (std::uint16_t a = 0; a <= KEY_FIELD_MAX_VALUE; a++) {
         for (std::uint16_t b = 0; b <= KEY_FIELD_MAX_VALUE; b++) {
             for (std::uint16_t c = 0; c <= KEY_FIELD_MAX_VALUE; c++) {
-                Key key(a, b, c);
-                auto findResult = map.find(key);
-                if (findResult == map.end()) {
-                    failTest("Could not find a key.");
-                }
+                const Key key(a, b, c);
+                const auto findResult = map.find(key);
+                assert(findResult != map.end(), "Could not find a key");
                 const Value& actualValue = findResult->second;
-                Value expectedValue = calculate(key);
-                if (actualValue != expectedValue) {
-                    failTest("Inconsistent value found.");
-                }
+                const Value expectedValue = calculate(key);
+                assert(actualValue == expectedValue, "Inconsistent value found");
             }
         }
     }
+}
+
+void checkIterator(const FcmmType& map, std::size_t performedInsertionsTotal) {
+    std::size_t counter = 0;
+    FcmmType::const_iterator it;
+    Key nextKey = Key();
+    Value nextValue = Value();
+    bool first = true;
+    for (it = map.begin(); it != map.end(); ++it) {
+        using std::swap;
+        const FcmmType::Entry& entry = *it;
+        auto findResult = map.find(entry.first);
+        assert(findResult != map.end(), "Inconsistent iterator [1]");
+        assert(it->second == findResult->second, "Inconsistent iterator [2]");
+        if (!first) {
+            assert(it->first == nextKey, "Inconsistent iterator postincrement [1]");
+            assert(it->second == nextValue, "Inconsistent iterator postincrement [2]");
+        } else {
+            first = false;
+        }
+        auto itBackup = it;
+        assert(itBackup == it++, "Inconsistent iterator postincrement [3]");
+        if (it != map.end()) {
+            nextKey = it->first;
+            nextValue = it->second;
+        }
+        swap(it, itBackup);
+        counter++;
+    }
+    assert(counter == performedInsertionsTotal, "Inconsistent iterator [3] (counter: " + std::to_string(counter) + ")");
+}
+
+void checkClone(const FcmmType& map, std::size_t performedInsertionsTotal, std::size_t duplicates) {
+    std::unique_ptr<FcmmType> mapClone(map.clone());
+    assert(mapClone->size() == performedInsertionsTotal - duplicates, "Inconsistent clone() behavior [1]"); // clone() should remove duplicates
+    for (FcmmType::const_iterator it = mapClone->begin(); it != mapClone->end(); ++it) {
+        const FcmmType::Entry& entry = *it;
+        assert(entry.second == map.at(entry.first), "Inconsistent clone() behavior [2]");
+    }
+    checkConsistency(*mapClone);
+}
+
+void checkFilter(const FcmmType& map) {
+
+    auto filterFunction = [](const FcmmType::Entry& entry) {
+        return entry.first.a == 0;
+    };
+
+    std::unique_ptr<FcmmType> filteredMap(map.filter(filterFunction));
+
+    assert(filteredMap->getNumEntries() == (KEY_FIELD_MAX_VALUE+1) * (KEY_FIELD_MAX_VALUE+1), "Inconsistent filter() behavior [1]");
+
+    for (const auto& entry : *filteredMap) {
+        assert(entry.first.a == 0, "Inconsistent filter() behavior [2]");
+        assert(entry.second == map[entry.first], "Inconsistent filter() behavior [3]");
+    }
+
+    for (std::uint16_t a = 1; a <= KEY_FIELD_MAX_VALUE; a++) {
+        for (std::uint16_t b = 0; b <= KEY_FIELD_MAX_VALUE; b++) {
+            for (std::uint16_t c = 0; c <= KEY_FIELD_MAX_VALUE; c++) {
+                Key key(a, b, c);
+                auto findResult = filteredMap->find(key);
+                assert(findResult == filteredMap->end(), "Inconsistent filter() behavior [4]");
+            }
+        }
+    }
+
 }
 
 void performTest(bool verbose = false) {
@@ -113,9 +166,9 @@ void performTest(bool verbose = false) {
 
     FcmmType map;
 
-    if (!map.empty()) {
-        failTest("Map should be empty.");
-    }
+    assert(map.empty(), "Map should be empty");
+    assert(map.size() == 0, "Inconsistent map size [1]");
+    assert(map.getNumEntries() == 0, "Inconsistent map size [2]");
 
     std::array<int, NUM_THREADS> performedInsertions;
     std::fill_n(performedInsertions.begin(), performedInsertions.size(), 0);
@@ -128,19 +181,19 @@ void performTest(bool verbose = false) {
     std::size_t performedInsertionsTotal = 0;
 
     for (int threadNo = 0; threadNo < NUM_THREADS; threadNo++) {
-        performedInsertionsTotal += performedInsertions[threadNo];
         if (verbose) {
             std::cout << "Thread no: " << threadNo << ", "
                     << "performed insertions: " << performedInsertions[threadNo]
                     << std::endl;
         }
+        performedInsertionsTotal += performedInsertions[threadNo];
     }
 
     const std::size_t duplicates = performedInsertionsTotal - EXPECTED_NUM_ENTRIES;
 
     if (performedInsertionsTotal >= EXPECTED_NUM_ENTRIES) {
         if (verbose) {
-            const double duplicatesPercent = 100.0f * duplicates / performedInsertionsTotal;
+            const double duplicatesPercent = 100.0 * duplicates / performedInsertionsTotal;
             std::cout << "Minimum total insertions: " << EXPECTED_NUM_ENTRIES << ", "
                     << "actual: " << performedInsertionsTotal
                     << std::endl
@@ -148,7 +201,7 @@ void performTest(bool verbose = false) {
                     << std::endl;
         }
     } else {
-        failTest("Minimum total insertions: " + std::to_string(EXPECTED_NUM_ENTRIES) + ", "
+        fail("Minimum total insertions: " + std::to_string(EXPECTED_NUM_ENTRIES) + ", "
                  + "actual: " + std::to_string(performedInsertionsTotal));
     }
 
@@ -160,99 +213,29 @@ void performTest(bool verbose = false) {
     // Check consistency
 
     std::cout << "Checking consistency: " << std::flush;
-
     checkConsistency(map);
-
     std::cout << "OK." << std::endl;
 
 
     // Check iterator
 
     std::cout << "Checking iterator: " << std::flush;
-
-    std::size_t counter = 0;
-    for (FcmmType::const_iterator it = map.begin(); it != map.end(); ++it) {
-        const FcmmType::Entry& entry = *it;
-        auto findResult = map.find(entry.first);
-        if (findResult == map.end()) {
-            failTest("Inconsistent iterator behaviour [1]");
-        }
-        if (entry.second != findResult->second) {
-            failTest("Inconsistent iterator behaviour [2]");
-        }
-        counter++;
-    }
-
-    if (counter != performedInsertionsTotal) {
-        failTest("Inconsistent iterator behaviour [3] (counter: " + std::to_string(counter) + ")");
-    }
-
+    checkIterator(map, performedInsertionsTotal);
     std::cout << "OK." << std::endl;
 
 
-    // Check clone() and filter()
+    // Check clone()
 
-    {
+    std::cout << "Checking clone(): " << std::flush;
+    checkClone(map, performedInsertionsTotal, duplicates);
+    std::cout << "OK." << std::endl;
 
-        std::cout << "Checking clone(): " << std::flush;
 
-        std::unique_ptr<FcmmType> mapClone(map.clone());
+    // Check filter()
 
-        if (mapClone->size() != performedInsertionsTotal - duplicates) { // clone() will remove duplicates
-            failTest("Inconsistent clone() behaviour [1]");
-        }
-
-        for (FcmmType::const_iterator it = mapClone->begin(); it != mapClone->end(); it++) {
-            const FcmmType::Entry& entry = *it;
-            if (entry.second != map.at(entry.first)) {
-                failTest("Inconsistent clone() behaviour [2]");
-            }
-        }
-
-        checkConsistency(*mapClone);
-
-        std::cout << "OK." << std::endl;
-
-    }
-
-    {
-
-        std::cout << "Checking filter(): " << std::flush;
-
-        auto filterFunction = [](const FcmmType::Entry& entry) {
-            return entry.first.a == 0;
-        };
-
-        std::unique_ptr<FcmmType> filteredMap(map.filter(filterFunction));
-
-        if (filteredMap->getNumEntries() != (KEY_FIELD_MAX_VALUE+1) * (KEY_FIELD_MAX_VALUE+1)) {
-            failTest("Inconsistent filter() behaviour [1]");
-        }
-
-        for (const auto& entry : *filteredMap) {
-            if (entry.first.a != 0) {
-                failTest("Inconsistent filter() behaviour [2]");
-            }
-            if (entry.second != map[entry.first]) {
-                failTest("Inconsistent filter() behaviour [3]");
-            }
-        }
-
-        for (std::uint16_t a = 1; a <= KEY_FIELD_MAX_VALUE; a++) {
-            for (std::uint16_t b = 0; b <= KEY_FIELD_MAX_VALUE; b++) {
-                for (std::uint16_t c = 0; c <= KEY_FIELD_MAX_VALUE; c++) {
-                    Key key(a, b, c);
-                    auto findResult = filteredMap->find(key);
-                    if (findResult != filteredMap->end()) {
-                        failTest("Inconsistent filter() behaviour [4]");
-                    }
-                }
-            }
-        }
-
-        std::cout << "OK." << std::endl;
-
-    }
+    std::cout << "Checking filter(): " << std::flush;
+    checkFilter(map);
+    std::cout << "OK." << std::endl;
 
 
 }
@@ -264,7 +247,7 @@ int main(void) {
 
     std::cout
             << "Correctness test for Fast Concurrent Memoization Map (fcmm)" << std::endl << std::endl
-            << "The test will be executed " << TEST_RUNS << " times and may require quite a long time. " << std::endl
+            << "The test will be executed " << TEST_RUNS << " times and may require a long time. " << std::endl
             << "Please be patient, this is not a benchmark." << std::endl << std::endl;
 
     for (int i = 1; i <= TEST_RUNS; i++) {
@@ -273,7 +256,7 @@ int main(void) {
         try {
             performTest(verbose);
         } catch (std::exception& e) {
-            failTest("Exception: " + std::string(e.what()));
+            fail("Exception: " + std::string(e.what()));
         }
     }
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Giacomo Drago <giacomo@giacomodrago.com>
+ * Copyright (c) 2014, Giacomo Drago <giacomo@giacomodrago.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,23 +31,25 @@
 
 #include <fcmm.hpp>
 
+#include "common.hpp"
+
 #include <iostream>
 #include <string>
 
-struct Key {
+struct CopyableKey {
     int i;
-    Key() : i(0) {}
-    explicit Key(int i) : i(0) {}
-    bool operator==(const Key& other) const {
+    CopyableKey() : i(0) {}
+    explicit CopyableKey(int i) : i(i) {}
+    bool operator==(const CopyableKey& other) const {
         return i == other.i;
     }
 };
 
-struct Value {
+struct CopyableValue {
     int i;
-    Value() : i(0) {}
-    explicit Value(int i) : i(0) {}
-    bool operator==(const Value& other) const {
+    CopyableValue() : i(0) {}
+    explicit CopyableValue(int i) : i(i) {}
+    bool operator==(const CopyableValue& other) const {
         return i == other.i;
     }
 };
@@ -85,14 +87,14 @@ struct MovableValue {
 };
 
 template<typename K>
-struct KeyHash1 {
+struct Hash1 {
     std::size_t operator()(const K& k) const {
         return std::hash<int>()(k.i);
     }
 };
 
 template<typename K>
-struct KeyHash2 {
+struct Hash2 {
     std::size_t operator()(const K& k) const {
         return std::hash<int>()(~k.i);
     }
@@ -114,8 +116,16 @@ void test(M& fcmm) {
     fcmm.insert(std::move(entry));
     
     K k3(3);
-    V v3(8);
+    V v3(6);
     fcmm.insert(std::move(k3), [&v3](const K&){ return std::move(v3); });
+
+    assert(fcmm.getNumEntries() == fcmm.size(), "Inconsistent map size");
+    assert(fcmm.size() == 3, "Inconsistent map size");
+    for (auto it = fcmm.cbegin(); it != fcmm.cend(); ++it)
+    {
+        const auto& entry = *it;
+        assert(entry.second.i == entry.first.i * 2, "Inconsistent entry");
+    }
     
 }
 
@@ -124,15 +134,15 @@ int main(void) {
     // If this test does not compile, please send me a complete report.
     
     // Only key is movable
-    fcmm::Fcmm<MovableKey, Value, KeyHash1<MovableKey>, KeyHash2<MovableKey> > fcmm1;
+    fcmm::Fcmm<MovableKey, CopyableValue, Hash1<MovableKey>, Hash2<MovableKey> > fcmm1;
     test(fcmm1);
     
     // Only value is movable
-    fcmm::Fcmm<Key, MovableValue, KeyHash1<Key>, KeyHash2<Key> > fcmm2;
+    fcmm::Fcmm<CopyableKey, MovableValue, Hash1<CopyableKey>, Hash2<CopyableKey> > fcmm2;
     test(fcmm2);
     
     // Both key and value are movable
-    fcmm::Fcmm<MovableKey, MovableValue, KeyHash1<MovableKey>, KeyHash2<MovableKey> > fcmm3;
+    fcmm::Fcmm<MovableKey, MovableValue, Hash1<MovableKey>, Hash2<MovableKey> > fcmm3;
     test(fcmm3);
     
     return 0;

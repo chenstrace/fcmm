@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Giacomo Drago <giacomo@giacomodrago.com>
+ * Copyright (c) 2014, Giacomo Drago <giacomo@giacomodrago.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,24 +37,34 @@
 #include <chrono>
 #include <ctime>
 #include <iostream>
+#include <string>
+
+static const std::string REPORT_RECIPIENT = "Giacomo Drago <giacomo@giacomodrago.com>";
+static const int CALCULATE_ITERATIONS = 15;
 
 struct Key {
     std::uint16_t a;
     std::uint16_t b;
     std::uint16_t c;
-    Key() {
+    Key() : a(0), b(0), c(0) {
     }
     Key(std::uint16_t a, std::uint16_t b, std::uint16_t c) : a(a), b(b), c(c) {
     }
     bool operator==(const Key& other) const {
         return other.a == a && other.b == b && other.c == c;
     }
+    bool operator!=(const Key& other) const {
+        return !operator==(other);
+    }
+    std::string toString() const {
+        return "key [" + std::to_string(a) + " " + std::to_string(b) + " " + std::to_string(c) + "]";
+    }
 };
 
 struct KeyHash1 {
     std::size_t operator()(const Key& key) const {
-        const std::size_t prime = 2166136261;
-        std::size_t hash = 2147483647;
+        const std::size_t prime = 16777619;
+        std::size_t hash = 2166136261;
         hash = (hash * prime) ^ key.a;
         hash = (hash * prime) ^ key.b;
         hash = (hash * prime) ^ key.c;
@@ -82,9 +92,10 @@ struct Value {
     bool operator!=(const Value& other) const {
         return !operator==(other);
     }
+    std::string toString() const {
+        return "value [" + std::to_string(u) + " " + std::to_string(v) + " " + std::to_string(w) + "]";
+    }
 };
-
-static const int CALCULATE_ITERATIONS = 15;
 
 Value calculate(const Key& k) {
 
@@ -106,17 +117,10 @@ Value calculate(const Key& k) {
 
 }
 
-bool checkEntryConsistency(const Key& key, const Value& actualValue, const Value& expectedValue) {
-    if (actualValue.u != expectedValue.u || actualValue.v != expectedValue.v || actualValue.w != expectedValue.w) {
-        return false;
-    }
-    return true;
-}
-
 template<typename FcmmType>
 void printStats(const FcmmType& map) {
     std::cout << "Statistics for the fcmm instance: " << std::endl;
-    fcmm::Stats stats = map.getStats();
+    const fcmm::Stats stats = map.getStats();
     std::cout << "Number of entries: " << stats.numEntries << std::endl;
     std::cout << "Number of submaps: " << stats.numSubmaps << std::endl;
     for (std::size_t i = 0; i < stats.numSubmaps; i++) {
@@ -137,13 +141,13 @@ long long elapsedMillis(timestamp_t start, timestamp_t end) {
     return std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
 }
 
-template<typename Function, typename... Arguments>
-long long benchmark(Function function, Arguments... args) {
+template<typename Function, typename... Args>
+long long benchmark(Function function, Args&&... args) {
 
-    timestamp_t start = now();
-    function(args...);
-    timestamp_t end = now();
-    long long elapsedMs = elapsedMillis(start, end);
+    const timestamp_t start = now();
+    function(std::forward<Args>(args)...);
+    const timestamp_t end = now();
+    const long long elapsedMs = elapsedMillis(start, end);
 
     return elapsedMs;
 
@@ -163,6 +167,20 @@ void runThreads(int numThreads, ThreadFunction threadFunction, Args&&... threadF
         thread.join();
     }
 
+}
+
+void fail(const std::string& message) {
+    std::cerr << std::endl << message << std::endl
+              << "TEST FAILED" << std::endl
+              << "Please report full test output along with your test environment" << std::endl
+              << "to " << REPORT_RECIPIENT << std::endl;
+    exit(EXIT_FAILURE);
+}
+
+void assert(bool condition, const std::string& message) {
+    if (!condition) {
+        fail(message);
+    }
 }
 
 #endif // FCMM_TEST_COMMON_H_

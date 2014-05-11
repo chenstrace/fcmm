@@ -6,7 +6,7 @@
  *
  * @section LICENSE
  *
- * Copyright (c) 2013, Giacomo Drago <giacomo@giacomodrago.com>
+ * Copyright (c) 2014, Giacomo Drago <giacomo@giacomodrago.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -67,49 +67,54 @@
 
 namespace fcmm {
 
+namespace {
+
 /**
  * @brief Default maximum load factor
  */
-static const float DEFAULT_MAX_LOAD_FACTOR = 0.75f;
+const float DEFAULT_MAX_LOAD_FACTOR = 0.75f;
 
 /**
  * @brief Default maximum number of submaps
  */
-static const std::size_t DEFAULT_MAX_NUM_SUBMAPS = 128;
+const std::size_t DEFAULT_MAX_NUM_SUBMAPS = 128;
 
 /**
  * @brief The capacity of a new submap is calculated as the first prime number following the capacity of the
  * last submap multiplied by this constant
  */
-static const std::size_t NEW_SUBMAPS_CAPACITY_MULTIPLIER = 8;
+const std::size_t NEW_SUBMAPS_CAPACITY_MULTIPLIER = 8;
 
 /**
- * @brief Minimum capacity of the first submap
+ * @brief Minimum capacity of the first submap (it has to be a prime number greater than 2)
  */
-static const std::size_t FIRST_SUBMAP_MIN_CAPACITY = 65537;
+const std::size_t FIRST_SUBMAP_MIN_CAPACITY = 65537;
 
 /**
  * @brief The capacity of the first submap is calculated as:
  * <code>max(FIRST_SUBMAP_MIN_CAPACITY, nextPrime(<b>FIRST_SUBMAP_CAPACITY_MULTIPLIER</b> * estimatedNumEntries / maxLoadFactor))</code>
  */
-static const float FIRST_SUBMAP_CAPACITY_MULTIPLIER = 1.03f;
+const float FIRST_SUBMAP_CAPACITY_MULTIPLIER = 1.03f;
 
 /**
- * @brief Auxiliary function for nextPrime(). Returns `true` if `n` is prime, `false` otherwise.
- *
- * Adapted from http://stackoverflow.com/a/5694432/671092
+ * @brief Returns `true` if `n` is prime, `false` otherwise.
  */
 template<typename T>
-static bool isPrime(const T& n, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr) {
+bool isPrime(const T& n, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr) {
 
-    std::size_t divisor = 3;
-    while (1) {
-        const std::size_t quotient = n / divisor;
-        if (quotient < divisor)
-            return true;
-        if (n == quotient * divisor)
+    if (n < 2)
+        return false;
+    if (n == 2)
+        return true;
+    if (n % 2 == 0)
+        return false;
+
+    T div = 3;
+
+    while (div * div <= n) {
+        if (n % div == 0)
             return false;
-        divisor += 2;
+        div += 2;
     }
 
     return true;
@@ -117,12 +122,10 @@ static bool isPrime(const T& n, typename std::enable_if<std::is_integral<T>::val
 }
 
 /**
- * @brief Returns the smallest prime number greater than `n`
- *
- * Adapted from http://stackoverflow.com/a/5694432/671092
+ * @brief Returns the smallest prime number greater than or equal to `n`
  */
 template<typename T>
-static T nextPrime(T n, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr) {
+T nextPrime(T n, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr) {
 
     if (n <= 2)
         return 2;
@@ -137,6 +140,8 @@ static T nextPrime(T n, typename std::enable_if<std::is_integral<T>::value>::typ
     return n;
 
 }
+
+} // unnamed namespace
 
 /**
  * @brief This struct holds the statistics about a single submap of a @link Fcmm @endlink instance
@@ -494,7 +499,7 @@ private:
         template<typename KeyType, typename ComputeValueFunction>
         std::pair<std::size_t, bool> insert(KeyType&& key, std::size_t hash1, std::size_t hash2, ComputeValueFunction computeValue) {
 
-            Value value = Value(); // to avoid "maybe-uninitialized" warnings
+            Value value = Value();
             bool valueComputed = false;
 
             const std::size_t startIndex = hash1 % getCapacity(); // initial position for probing
@@ -891,7 +896,7 @@ public:
      */
     template<typename ComputeValueFunction>
     std::pair<const_iterator, bool> insert(Key&& key, ComputeValueFunction computeValue) {
-        return insertHelper(key, keyHash1(key), keyHash2(key), computeValue);
+        return insertHelper(std::move(key), keyHash1(key), keyHash2(key), computeValue);
     }
 
     /**
@@ -923,7 +928,7 @@ public:
     }
 
     /**
-     * @brief Inserts a new entry in the map. The new entry is constructed in place using `args` as the arguments
+     * @brief Inserts a new entry into the map. The new entry is constructed using `args` as the arguments
      * for the entry's constructor.
      *
      * @param args  arguments used to construct a new entry (key, value)
@@ -1164,6 +1169,12 @@ public:
     public:
 
         /**
+         * @brief Default constructor. The resulting iterator is invalid and should not be used.
+         */
+        const_iterator() : map(NULL), submapIndex(0), bucketIndex(0), end(true) {
+        }
+
+        /**
          * @brief Equality operator
          */
         bool operator==(const const_iterator& other) const {
@@ -1207,16 +1218,6 @@ public:
          */
         const Entry* operator->() const {
             return &getEntry();
-        }
-
-        /**
-         * @brief Swap function
-         */
-        friend void swap(const_iterator& it1, const_iterator& it2) {
-            std::swap(it1.map, it2.map);
-            std::swap(it1.submapIndex, it2.submapIndex);
-            std::swap(it1.bucketIndex, it2.bucketIndex);
-            std::swap(it1.end, it2.end);
         }
 
     };
