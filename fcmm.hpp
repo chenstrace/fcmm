@@ -45,11 +45,11 @@
 #ifndef FCMM_H_
 #define FCMM_H_
 
-// The noexcept specifier is unsupported in Visual Studio
-#ifndef _MSC_VER
-#define FCMM_NOEXCEPT noexcept
+// The noexcept specifier is unsupported before Visual Studio 2015
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#define FCMM_NOEXCEPT 
 #else
-#define FCMM_NOEXCEPT
+#define FCMM_NOEXCEPT noexcept
 #endif
 
 #include <cstddef>
